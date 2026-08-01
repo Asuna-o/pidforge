@@ -12,7 +12,7 @@ Cohen–Coon, IMC/Lambda, SIMC, Tyreus–Luyben), a discrete-time PID with
 anti-windup and derivative filtering, an exact-dead-time simulation engine,
 and an optional CLI.
 
-[![CI](https://github.com/pidforge/pidforge/actions/workflows/ci.yml/badge.svg)](https://github.com/pidforge/pidforge/actions/workflows/ci.yml)
+[![CI](https://github.com/Asuna-o/pidforge/actions/workflows/ci.yml/badge.svg)](https://github.com/Asuna-o/pidforge/actions/workflows/ci.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 

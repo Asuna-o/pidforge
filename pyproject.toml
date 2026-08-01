@@ -9,7 +9,7 @@ description = "Control-loop design & PID tuning toolkit for automation engineers
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [{ name = "pidforge contributors" }]
+authors = [{ name = "Asuna-o" }]
 keywords = [
     "pid",
     "control",
