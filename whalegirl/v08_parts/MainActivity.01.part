@@ -1,0 +1,144 @@
+(rigAdapter);
+        rigSpinner.setSelection(Math.max(0, Math.min(2, settingPrefs.getInt("rig_strength", 1))));
+        rigRow.addView(rigSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(rigRow);
+
+        CheckBox blinkEnabled = new CheckBox(this);
+        blinkEnabled.setText("自动眨眼");
+        blinkEnabled.setChecked(settingPrefs.getBoolean("blink_enabled", true));
+        root.addView(blinkEnabled);
+
+        CheckBox perchEnabled = new CheckBox(this);
+        perchEnabled.setText("高速撞到屏幕左右边缘时，偶尔扒住边缘几秒");
+        perchEnabled.setChecked(settingPrefs.getBoolean("perch_enabled", true));
+        root.addView(perchEnabled);
+
+        CheckBox autoDrop = new CheckBox(this);
+        autoDrop.setText("启动/召回时从屏幕上方掉下来");
+        autoDrop.setChecked(settingPrefs.getBoolean("auto_drop", true));
+        root.addView(autoDrop);
+
+        CheckBox autoSleep = new CheckBox(this);
+        autoSleep.setText("长时间没互动后自动睡觉");
+        autoSleep.setChecked(settingPrefs.getBoolean("auto_sleep", true));
+        root.addView(autoSleep);
+
+        CheckBox wanderEnabled = new CheckBox(this);
+        wanderEnabled.setText("空闲时偶尔自己在屏幕底部巡游一下");
+        wanderEnabled.setChecked(settingPrefs.getBoolean("wander_enabled", true));
+        root.addView(wanderEnabled);
+
+        LinearLayout wanderRow = new LinearLayout(this);
+        wanderRow.setGravity(Gravity.CENTER_VERTICAL);
+        wanderRow.addView(label("巡游频率：", 16));
+        Spinner wanderSpinner = new Spinner(this);
+        String[] wanderLabels = new String[]{"很少", "偶尔", "活泼"};
+        int[] wanderSeconds = new int[]{75, 45, 25};
+        ArrayAdapter<String> wanderAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, wanderLabels);
+        wanderSpinner.setAdapter(wanderAdapter);
+        int currentWander = settingPrefs.getInt("wander_seconds", 45);
+        int wanderIndex = 1;
+        for (int i = 0; i < wanderSeconds.length; i++) if (wanderSeconds[i] == currentWander) wanderIndex = i;
+        wanderSpinner.setSelection(wanderIndex);
+        wanderRow.addView(wanderSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(wanderRow);
+
+        LinearLayout sleepRow = new LinearLayout(this);
+        sleepRow.setGravity(Gravity.CENTER_VERTICAL);
+        sleepRow.addView(label("多久后睡觉：", 16));
+        Spinner sleepSpinner = new Spinner(this);
+        String[] sleepLabels = new String[]{"1 分钟", "2 分钟", "5 分钟"};
+        int[] sleepValues = new int[]{60, 120, 300};
+        ArrayAdapter<String> sleepAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, sleepLabels);
+        sleepSpinner.setAdapter(sleepAdapter);
+        int currentSleep = settingPrefs.getInt("sleep_seconds", 120);
+        int sleepIndex = 1;
+        for (int i = 0; i < sleepValues.length; i++) if (sleepValues[i] == currentSleep) sleepIndex = i;
+        sleepSpinner.setSelection(sleepIndex);
+        sleepRow.addView(sleepSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(sleepRow);
+
+        CheckBox microActions = new CheckBox(this);
+        microActions.setText("启用自主小动作（张望、摆尾、歪头、短暂发呆）");
+        microActions.setChecked(settingPrefs.getBoolean("micro_actions", true));
+        root.addView(microActions);
+
+        CheckBox moodMemory = new CheckBox(this);
+        moodMemory.setText("启用情绪记忆（连续快速拖拽/重摔会短暂生气，摸头可安抚）");
+        moodMemory.setChecked(settingPrefs.getBoolean("mood_memory", true));
+        root.addView(moodMemory);
+
+        CheckBox landingReaction = new CheckBox(this);
+        landingReaction.setText("启用分级落地反应（轻落地、普通落地、重落地表现不同）");
+        landingReaction.setChecked(settingPrefs.getBoolean("landing_reaction", true));
+        root.addView(landingReaction);
+
+        LinearLayout personalityRow = new LinearLayout(this);
+        personalityRow.setGravity(Gravity.CENTER_VERTICAL);
+        personalityRow.addView(label("互动性格：", 16));
+        Spinner personalitySpinner = new Spinner(this);
+        String[] personalityLabels = new String[]{"温柔", "标准", "活泼"};
+        ArrayAdapter<String> personalityAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, personalityLabels);
+        personalitySpinner.setAdapter(personalityAdapter);
+        personalitySpinner.setSelection(Math.max(0, Math.min(2, settingPrefs.getInt("personality_mode", 1))));
+        personalityRow.addView(personalitySpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(personalityRow);
+
+        LinearLayout physicsRow = new LinearLayout(this);
+        physicsRow.setGravity(Gravity.CENTER_VERTICAL);
+        physicsRow.addView(label("物理手感：", 16));
+        Spinner physicsSpinner = new Spinner(this);
+        String[] physicsLabels = new String[]{"软乎乎", "标准", "弹弹鲸"};
+        ArrayAdapter<String> physicsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, physicsLabels);
+        physicsSpinner.setAdapter(physicsAdapter);
+        physicsSpinner.setSelection(Math.max(0, Math.min(2, settingPrefs.getInt("physics_mode", 1))));
+        physicsRow.addView(physicsSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(physicsRow);
+
+        LinearLayout speechRow = new LinearLayout(this);
+        speechRow.setGravity(Gravity.CENTER_VERTICAL);
+        speechRow.addView(label("说话频率：", 16));
+        Spinner speechSpinner = new Spinner(this);
+        String[] speechLabels = new String[]{"安静", "普通", "话多一点"};
+        ArrayAdapter<String> speechAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, speechLabels);
+        speechSpinner.setAdapter(speechAdapter);
+        speechSpinner.setSelection(Math.max(0, Math.min(2, settingPrefs.getInt("speech_mode", 1))));
+        speechRow.addView(speechSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(speechRow);
+
+        LinearLayout sizeRow = new LinearLayout(this);
+        sizeRow.setGravity(Gravity.CENTER_VERTICAL);
+        sizeRow.addView(label("桌宠大小：", 16));
+        Spinner sizeSpinner = new Spinner(this);
+        String[] sizeLabels = new String[]{"小", "中", "大"};
+        ArrayAdapter<String> sizeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, sizeLabels);
+        sizeSpinner.setAdapter(sizeAdapter);
+        sizeSpinner.setSelection(Math.max(0, Math.min(2, settingPrefs.getInt("pet_size", 1))));
+        sizeRow.addView(sizeSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(sizeRow);
+
+        TextView settingsTitle = label("休息提醒", 20);
+        settingsTitle.setPadding(0, dp(18), 0, dp(8));
+        root.addView(settingsTitle);
+
+        CheckBox restEnabled = new CheckBox(this);
+        restEnabled.setText("连续亮屏太久时提醒我休息");
+        restEnabled.setChecked(settingPrefs.getBoolean("rest_enabled", true));
+        root.addView(restEnabled);
+
+        LinearLayout restRow = new LinearLayout(this);
+        restRow.setGravity(Gravity.CENTER_VERTICAL);
+        restRow.addView(label("提醒间隔：", 16));
+        Spinner restSpinner = new Spinner(this);
+        String[] minuteLabels = new String[]{"30 分钟", "45 分钟", "60 分钟", "90 分钟"};
+        int[] minuteValues = new int[]{30, 45, 60, 90};
+        ArrayAdapter<String> restAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, minuteLabels);
+        restSpinner.setAdapter(restAdapter);
+        int currentMinutes = settingPrefs.getInt("rest_minutes", 45);
+        int restIndex = 1;
+        for (int i = 0; i < minuteValues.length; i++) if (minuteValues[i] == currentMinutes) restIndex = i;
+        restSpinner.setSelection(restIndex);
+        restRow.addView(restSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(restRow);
+
+        
