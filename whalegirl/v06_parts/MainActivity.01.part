@@ -1,0 +1,147 @@
+        ArrayAdapter<String> sleepAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, sleepLabels);
+        sleepSpinner.setAdapter(sleepAdapter);
+        int currentSleep = settingPrefs.getInt("sleep_seconds", 120);
+        int sleepIndex = 1;
+        for (int i = 0; i < sleepValues.length; i++) if (sleepValues[i] == currentSleep) sleepIndex = i;
+        sleepSpinner.setSelection(sleepIndex);
+        sleepRow.addView(sleepSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(sleepRow);
+
+        LinearLayout physicsRow = new LinearLayout(this);
+        physicsRow.setGravity(Gravity.CENTER_VERTICAL);
+        physicsRow.addView(label("物理手感：", 16));
+        Spinner physicsSpinner = new Spinner(this);
+        String[] physicsLabels = new String[]{"软乎乎", "标准", "弹弹鲸"};
+        ArrayAdapter<String> physicsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, physicsLabels);
+        physicsSpinner.setAdapter(physicsAdapter);
+        physicsSpinner.setSelection(Math.max(0, Math.min(2, settingPrefs.getInt("physics_mode", 1))));
+        physicsRow.addView(physicsSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(physicsRow);
+
+        LinearLayout speechRow = new LinearLayout(this);
+        speechRow.setGravity(Gravity.CENTER_VERTICAL);
+        speechRow.addView(label("说话频率：", 16));
+        Spinner speechSpinner = new Spinner(this);
+        String[] speechLabels = new String[]{"安静", "普通", "话多一点"};
+        ArrayAdapter<String> speechAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, speechLabels);
+        speechSpinner.setAdapter(speechAdapter);
+        speechSpinner.setSelection(Math.max(0, Math.min(2, settingPrefs.getInt("speech_mode", 1))));
+        speechRow.addView(speechSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(speechRow);
+
+        LinearLayout sizeRow = new LinearLayout(this);
+        sizeRow.setGravity(Gravity.CENTER_VERTICAL);
+        sizeRow.addView(label("桌宠大小：", 16));
+        Spinner sizeSpinner = new Spinner(this);
+        String[] sizeLabels = new String[]{"小", "中", "大"};
+        ArrayAdapter<String> sizeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, sizeLabels);
+        sizeSpinner.setAdapter(sizeAdapter);
+        sizeSpinner.setSelection(Math.max(0, Math.min(2, settingPrefs.getInt("pet_size", 1))));
+        sizeRow.addView(sizeSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(sizeRow);
+
+        TextView settingsTitle = label("休息提醒", 20);
+        settingsTitle.setPadding(0, dp(18), 0, dp(8));
+        root.addView(settingsTitle);
+
+        CheckBox restEnabled = new CheckBox(this);
+        restEnabled.setText("连续亮屏太久时提醒我休息");
+        restEnabled.setChecked(settingPrefs.getBoolean("rest_enabled", true));
+        root.addView(restEnabled);
+
+        LinearLayout restRow = new LinearLayout(this);
+        restRow.setGravity(Gravity.CENTER_VERTICAL);
+        restRow.addView(label("提醒间隔：", 16));
+        Spinner restSpinner = new Spinner(this);
+        String[] minuteLabels = new String[]{"30 分钟", "45 分钟", "60 分钟", "90 分钟"};
+        int[] minuteValues = new int[]{30, 45, 60, 90};
+        ArrayAdapter<String> restAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, minuteLabels);
+        restSpinner.setAdapter(restAdapter);
+        int currentMinutes = settingPrefs.getInt("rest_minutes", 45);
+        int restIndex = 1;
+        for (int i = 0; i < minuteValues.length; i++) if (minuteValues[i] == currentMinutes) restIndex = i;
+        restSpinner.setSelection(restIndex);
+        restRow.addView(restSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(restRow);
+
+        Button saveSettings = new Button(this);
+        saveSettings.setText("保存设置并重新加载桌宠");
+        saveSettings.setOnClickListener(v -> {
+            settingPrefs.edit()
+                    .putBoolean("rest_enabled", restEnabled.isChecked())
+                    .putInt("rest_minutes", minuteValues[restSpinner.getSelectedItemPosition()])
+                    .putInt("pet_size", sizeSpinner.getSelectedItemPosition())
+                    .putBoolean("rig_enabled", rigEnabled.isChecked())
+                    .putInt("rig_strength", rigSpinner.getSelectedItemPosition())
+                    .putBoolean("blink_enabled", blinkEnabled.isChecked())
+                    .putBoolean("perch_enabled", perchEnabled.isChecked())
+                    .putBoolean("auto_drop", autoDrop.isChecked())
+                    .putBoolean("auto_sleep", autoSleep.isChecked())
+                    .putInt("sleep_seconds", sleepValues[sleepSpinner.getSelectedItemPosition()])
+                    .putInt("physics_mode", physicsSpinner.getSelectedItemPosition())
+                    .putInt("speech_mode", speechSpinner.getSelectedItemPosition())
+                    .apply();
+            if (Settings.canDrawOverlays(this)) {
+                stopService(new Intent(this, PetOverlayService.class));
+                startPetService(new Intent(this, PetOverlayService.class));
+            }
+            Toast.makeText(this, "设置已保存", Toast.LENGTH_SHORT).show();
+        });
+        root.addView(saveSettings);
+
+        TextView todoTitle = label("待办", 20);
+        todoTitle.setPadding(0, dp(18), 0, dp(8));
+        root.addView(todoTitle);
+
+        Button add = new Button(this);
+        add.setText("＋ 添加待办");
+        add.setOnClickListener(v -> askTodo());
+        root.addView(add);
+
+        listBox = new LinearLayout(this);
+        listBox.setOrientation(LinearLayout.VERTICAL);
+        root.addView(listBox);
+        refreshTodos();
+
+        TextView tips = label("互动：轻点会开心并冒爱心；长按摸头；快速双击打开设置。拖拽时鲸尾、鲸鳍和长发会分别产生惯性，快速甩到左右边缘还有概率扒住屏幕；不理她一会儿会闭眼睡觉。", 13);
+        tips.setPadding(0, dp(18), 0, 0);
+        root.addView(tips);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(root);
+        setContentView(scroll);
+    }
+
+    private JSONArray loadTodos() {
+        try {
+            return new JSONArray(todoPrefs.getString("items", "[]"));
+        } catch (Exception e) {
+            return new JSONArray();
+        }
+    }
+
+    private void saveTodos(JSONArray array) {
+        todoPrefs.edit().putString("items", array.toString()).apply();
+    }
+
+    private void refreshTodos() {
+        listBox.removeAllViews();
+        JSONArray array = loadTodos();
+        if (array.length() == 0) {
+            TextView empty = label("还没有待办。鲸鱼娘暂时可以安心摸鱼～", 15);
+            empty.setPadding(dp(4), dp(12), dp(4), dp(12));
+            listBox.addView(empty);
+            return;
+        }
+
+        SimpleDateFormat format = new SimpleDateFormat("MM-dd HH:mm", Locale.getDefault());
+        for (int i = 0; i < array.length(); i++) {
+            try {
+                JSONObject item = array.getJSONObject(i);
+                LinearLayout line = new LinearLayout(this);
+                line.setGravity(Gravity.CENTER_VERTICAL);
+                line.setPadding(0, dp(3), 0, dp(3));
+
+                CheckBox check = new CheckBox(this);
+                check.setText(item.getString("title") + "\n" + format.format(new Date(item.getLong("due"))));
+                check.setChecked(item.optBoolean("done"));
