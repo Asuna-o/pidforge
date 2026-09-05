@@ -70,11 +70,11 @@ public class MainActivity extends Activity {
         root.setPadding(dp(18), dp(18), dp(18), dp(28));
         root.setBackgroundColor(Color.rgb(245, 248, 255));
 
-        TextView title = label("鲸鱼娘桌宠 V0.6", 27);
+        TextView title = label("鲸鱼娘桌宠 V0.7", 27);
         title.setGravity(Gravity.CENTER);
         root.addView(title);
 
-        TextView sub = label("分区动态 · 眨眼睡觉 · 屏幕扒边 · 心情状态 · 重力弹跳 · 待办", 14);
+        TextView sub = label("专注陪伴 · 自主巡游 · 省电渲染 · 分区动态 · 重力弹跳 · 待办", 14);
         sub.setGravity(Gravity.CENTER);
         sub.setPadding(0, dp(6), 0, dp(16));
         root.addView(sub);
@@ -129,6 +129,35 @@ public class MainActivity extends Activity {
         quickActions.addView(cheer, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         root.addView(quickActions);
 
+        TextView focusTitle = label("专注陪伴", 20);
+        focusTitle.setPadding(0, dp(16), 0, dp(6));
+        root.addView(focusTitle);
+
+        LinearLayout focusActions = new LinearLayout(this);
+        focusActions.setOrientation(LinearLayout.HORIZONTAL);
+        int[] focusMinutes = new int[]{25, 45, 60};
+        String[] focusLabels = new String[]{"专注 25 分钟", "45 分钟", "60 分钟"};
+        for (int i = 0; i < focusMinutes.length; i++) {
+            final int minutes = focusMinutes[i];
+            Button focus = new Button(this);
+            focus.setText(focusLabels[i]);
+            focus.setOnClickListener(v -> {
+                if (!Settings.canDrawOverlays(this)) {
+                    Toast.makeText(this, "请先启动鲸鱼娘并授予悬浮窗权限", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                startPetService(new Intent(this, PetOverlayService.class).putExtra("focus_minutes", minutes));
+                Toast.makeText(this, "鲸鱼娘会安静陪你专注 " + minutes + " 分钟", Toast.LENGTH_SHORT).show();
+            });
+            focusActions.addView(focus, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        }
+        root.addView(focusActions);
+
+        Button cancelFocus = new Button(this);
+        cancelFocus.setText("结束当前专注");
+        cancelFocus.setOnClickListener(v -> startPetService(new Intent(this, PetOverlayService.class).putExtra("cancel_focus", true)));
+        root.addView(cancelFocus);
+
         Button testTalk = new Button(this);
         testTalk.setText("让鲸鱼娘说句话");
         testTalk.setOnClickListener(v -> {
@@ -156,33 +185,3 @@ public class MainActivity extends Activity {
         String[] rigLabels = new String[]{"轻柔", "标准", "活泼"};
         ArrayAdapter<String> rigAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, rigLabels);
         rigSpinner.setAdapter(rigAdapter);
-        rigSpinner.setSelection(Math.max(0, Math.min(2, settingPrefs.getInt("rig_strength", 1))));
-        rigRow.addView(rigSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-        root.addView(rigRow);
-
-        CheckBox blinkEnabled = new CheckBox(this);
-        blinkEnabled.setText("自动眨眼");
-        blinkEnabled.setChecked(settingPrefs.getBoolean("blink_enabled", true));
-        root.addView(blinkEnabled);
-
-        CheckBox perchEnabled = new CheckBox(this);
-        perchEnabled.setText("高速撞到屏幕左右边缘时，偶尔扒住边缘几秒");
-        perchEnabled.setChecked(settingPrefs.getBoolean("perch_enabled", true));
-        root.addView(perchEnabled);
-
-        CheckBox autoDrop = new CheckBox(this);
-        autoDrop.setText("启动/召回时从屏幕上方掉下来");
-        autoDrop.setChecked(settingPrefs.getBoolean("auto_drop", true));
-        root.addView(autoDrop);
-
-        CheckBox autoSleep = new CheckBox(this);
-        autoSleep.setText("长时间没互动后自动睡觉");
-        autoSleep.setChecked(settingPrefs.getBoolean("auto_sleep", true));
-        root.addView(autoSleep);
-
-        LinearLayout sleepRow = new LinearLayout(this);
-        sleepRow.setGravity(Gravity.CENTER_VERTICAL);
-        sleepRow.addView(label("多久后睡觉：", 16));
-        Spinner sleepSpinner = new Spinner(this);
-        String[] sleepLabels = new String[]{"1 分钟", "2 分钟", "5 分钟"};
-        int[] sleepValues = new int[]{60, 120, 300};
