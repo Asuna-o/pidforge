@@ -1,3 +1,72 @@
+                    .putInt("wander_seconds", wanderSeconds[wanderSpinner.getSelectedItemPosition()])
+                    .putInt("sleep_seconds", sleepValues[sleepSpinner.getSelectedItemPosition()])
+                    .putInt("physics_mode", physicsSpinner.getSelectedItemPosition())
+                    .putInt("speech_mode", speechSpinner.getSelectedItemPosition())
+                    .apply();
+            if (Settings.canDrawOverlays(this)) {
+                stopService(new Intent(this, PetOverlayService.class));
+                startPetService(new Intent(this, PetOverlayService.class));
+            }
+            Toast.makeText(this, "设置已保存", Toast.LENGTH_SHORT).show();
+        });
+        root.addView(saveSettings);
+
+        TextView todoTitle = label("待办", 20);
+        todoTitle.setPadding(0, dp(18), 0, dp(8));
+        root.addView(todoTitle);
+
+        Button add = new Button(this);
+        add.setText("＋ 添加待办");
+        add.setOnClickListener(v -> askTodo());
+        root.addView(add);
+
+        listBox = new LinearLayout(this);
+        listBox.setOrientation(LinearLayout.VERTICAL);
+        root.addView(listBox);
+        refreshTodos();
+
+        TextView tips = label("互动：轻点会开心并冒爱心；长按摸头；快速双击打开设置。V0.7 可让鲸鱼娘陪你专注 25/45/60 分钟，专注时她会安静下来；空闲时可自主巡游。拖拽仍保留鲸尾、鲸鳍和长发分区惯性，睡觉时会自动降低刷新频率来省电。", 13);
+        tips.setPadding(0, dp(18), 0, 0);
+        root.addView(tips);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(root);
+        setContentView(scroll);
+    }
+
+    private JSONArray loadTodos() {
+        try {
+            return new JSONArray(todoPrefs.getString("items", "[]"));
+        } catch (Exception e) {
+            return new JSONArray();
+        }
+    }
+
+    private void saveTodos(JSONArray array) {
+        todoPrefs.edit().putString("items", array.toString()).apply();
+    }
+
+    private void refreshTodos() {
+        listBox.removeAllViews();
+        JSONArray array = loadTodos();
+        if (array.length() == 0) {
+            TextView empty = label("还没有待办。鲸鱼娘暂时可以安心摸鱼～", 15);
+            empty.setPadding(dp(4), dp(12), dp(4), dp(12));
+            listBox.addView(empty);
+            return;
+        }
+
+        SimpleDateFormat format = new SimpleDateFormat("MM-dd HH:mm", Locale.getDefault());
+        for (int i = 0; i < array.length(); i++) {
+            try {
+                JSONObject item = array.getJSONObject(i);
+                LinearLayout line = new LinearLayout(this);
+                line.setGravity(Gravity.CENTER_VERTICAL);
+                line.setPadding(0, dp(3), 0, dp(3));
+
+                CheckBox check = new CheckBox(this);
+                check.setText(item.getString("title") + "\n" + format.format(new Date(item.getLong("due"))));
+                check.setChecked(item.optBoolean("done"));
                 final long itemId = item.optLong("id", 0L);
                 check.setOnCheckedChangeListener((CompoundButton button, boolean checked) -> {
                     try {
