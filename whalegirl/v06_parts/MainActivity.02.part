@@ -1,0 +1,108 @@
+                final long itemId = item.optLong("id", 0L);
+                check.setOnCheckedChangeListener((CompoundButton button, boolean checked) -> {
+                    try {
+                        JSONArray latest = loadTodos();
+                        for (int k = 0; k < latest.length(); k++) {
+                            JSONObject obj = latest.getJSONObject(k);
+                            if (obj.optLong("id", -1L) == itemId) {
+                                obj.put("done", checked);
+                                break;
+                            }
+                        }
+                        saveTodos(latest);
+                    } catch (Exception ignored) {
+                    }
+                });
+                line.addView(check, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+                Button delete = new Button(this);
+                delete.setText("删");
+                delete.setOnClickListener(v -> deleteTodo(itemId));
+                line.addView(delete);
+                listBox.addView(line);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    private void deleteTodo(long itemId) {
+        JSONArray input = loadTodos();
+        JSONArray output = new JSONArray();
+        for (int i = 0; i < input.length(); i++) {
+            JSONObject item = input.optJSONObject(i);
+            if (item != null && item.optLong("id", -1L) != itemId) output.put(item);
+        }
+        saveTodos(output);
+        refreshTodos();
+    }
+
+    private void askTodo() {
+        EditText edit = new EditText(this);
+        edit.setHint("例如：交高数作业");
+        new AlertDialog.Builder(this)
+                .setTitle("添加待办")
+                .setView(edit)
+                .setPositiveButton("下一步", (dialog, which) -> {
+                    String title = edit.getText().toString().trim();
+                    if (!title.isEmpty()) pickWhen(title);
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void pickWhen(String title) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR_OF_DAY, 1);
+        new DatePickerDialog(this, (picker, year, month, day) ->
+                new TimePickerDialog(this, (timePicker, hour, minute) -> {
+                    calendar.set(year, month, day, hour, minute, 0);
+                    calendar.set(Calendar.MILLISECOND, 0);
+                    long id = System.currentTimeMillis();
+                    try {
+                        JSONArray array = loadTodos();
+                        array.put(new JSONObject()
+                                .put("id", id)
+                                .put("title", title)
+                                .put("due", calendar.getTimeInMillis())
+                                .put("done", false));
+                        saveTodos(array);
+                        schedule(id, title, calendar.getTimeInMillis());
+                        refreshTodos();
+                    } catch (Exception ignored) {
+                    }
+                }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show(),
+                calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    private void schedule(long id, String title, long at) {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(this, ReminderReceiver.class).putExtra("title", title);
+        PendingIntent pending = PendingIntent.getBroadcast(
+                this,
+                (int) (id % Integer.MAX_VALUE),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        if (Build.VERSION.SDK_INT >= 31 && !alarmManager.canScheduleExactAlarms()) {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+        } else {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+        }
+    }
+
+    private void startPet() {
+        if (!Settings.canDrawOverlays(this)) {
+            Intent permission = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+            startActivity(permission);
+            Toast.makeText(this, "请允许“显示在其他应用上层”，回来后再点一次启动", Toast.LENGTH_LONG).show();
+            return;
+        }
+        startPetService(new Intent(this, PetOverlayService.class));
+    }
+
+    private void startPetService(Intent intent) {
+        if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent);
+        else startService(intent);
+    }
+}
