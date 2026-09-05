@@ -1,0 +1,188 @@
+package com.whalegirl.pet;
+
+import android.Manifest;
+import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.AlertDialog;
+import android.app.DatePickerDialog;
+import android.app.PendingIntent;
+import android.app.TimePickerDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+
+public class MainActivity extends Activity {
+    private LinearLayout listBox;
+    private SharedPreferences todoPrefs;
+    private SharedPreferences settingPrefs;
+
+    @Override
+    public void onCreate(Bundle state) {
+        super.onCreate(state);
+        todoPrefs = getSharedPreferences("todos", MODE_PRIVATE);
+        settingPrefs = getSharedPreferences("settings", MODE_PRIVATE);
+        if (Build.VERSION.SDK_INT >= 33) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 9);
+        }
+        render();
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private TextView label(String text, float size) {
+        TextView v = new TextView(this);
+        v.setText(text);
+        v.setTextSize(size);
+        v.setTextColor(Color.rgb(50, 62, 98));
+        return v;
+    }
+
+    private void render() {
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(dp(18), dp(18), dp(18), dp(28));
+        root.setBackgroundColor(Color.rgb(245, 248, 255));
+
+        TextView title = label("鲸鱼娘桌宠 V0.6", 27);
+        title.setGravity(Gravity.CENTER);
+        root.addView(title);
+
+        TextView sub = label("分区动态 · 眨眼睡觉 · 屏幕扒边 · 心情状态 · 重力弹跳 · 待办", 14);
+        sub.setGravity(Gravity.CENTER);
+        sub.setPadding(0, dp(6), 0, dp(16));
+        root.addView(sub);
+
+        LinearLayout controls = new LinearLayout(this);
+        controls.setOrientation(LinearLayout.HORIZONTAL);
+        Button start = new Button(this);
+        start.setText("启动鲸鱼娘");
+        start.setOnClickListener(v -> startPet());
+        controls.addView(start, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+        Button stop = new Button(this);
+        stop.setText("收起");
+        stop.setOnClickListener(v -> stopService(new Intent(this, PetOverlayService.class)));
+        controls.addView(stop, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(controls);
+
+        LinearLayout quickActions = new LinearLayout(this);
+        quickActions.setOrientation(LinearLayout.HORIZONTAL);
+
+        Button recall = new Button(this);
+        recall.setText("召回");
+        recall.setOnClickListener(v -> {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "请先授予悬浮窗权限", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            startPetService(new Intent(this, PetOverlayService.class).putExtra("recall", true));
+        });
+        quickActions.addView(recall, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+        Button hop = new Button(this);
+        hop.setText("跳一下");
+        hop.setOnClickListener(v -> {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "请先授予悬浮窗权限", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            startPetService(new Intent(this, PetOverlayService.class).putExtra("hop", true));
+        });
+        quickActions.addView(hop, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+        Button cheer = new Button(this);
+        cheer.setText("逗开心");
+        cheer.setOnClickListener(v -> {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "请先授予悬浮窗权限", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            startPetService(new Intent(this, PetOverlayService.class).putExtra("cheer", true));
+        });
+        quickActions.addView(cheer, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(quickActions);
+
+        Button testTalk = new Button(this);
+        testTalk.setText("让鲸鱼娘说句话");
+        testTalk.setOnClickListener(v -> {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "请先启动鲸鱼娘并授予悬浮窗权限", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            startPetService(new Intent(this, PetOverlayService.class).putExtra("speak", "我在这里呀～"));
+        });
+        root.addView(testTalk);
+
+        TextView behaviorTitle = label("桌宠行为", 20);
+        behaviorTitle.setPadding(0, dp(18), 0, dp(8));
+        root.addView(behaviorTitle);
+
+        CheckBox rigEnabled = new CheckBox(this);
+        rigEnabled.setText("启用分区软体动态（鲸尾、两侧鲸鳍、长发分别有惯性）");
+        rigEnabled.setChecked(settingPrefs.getBoolean("rig_enabled", true));
+        root.addView(rigEnabled);
+
+        LinearLayout rigRow = new LinearLayout(this);
+        rigRow.setGravity(Gravity.CENTER_VERTICAL);
+        rigRow.addView(label("动态幅度：", 16));
+        Spinner rigSpinner = new Spinner(this);
+        String[] rigLabels = new String[]{"轻柔", "标准", "活泼"};
+        ArrayAdapter<String> rigAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, rigLabels);
+        rigSpinner.setAdapter(rigAdapter);
+        rigSpinner.setSelection(Math.max(0, Math.min(2, settingPrefs.getInt("rig_strength", 1))));
+        rigRow.addView(rigSpinner, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(rigRow);
+
+        CheckBox blinkEnabled = new CheckBox(this);
+        blinkEnabled.setText("自动眨眼");
+        blinkEnabled.setChecked(settingPrefs.getBoolean("blink_enabled", true));
+        root.addView(blinkEnabled);
+
+        CheckBox perchEnabled = new CheckBox(this);
+        perchEnabled.setText("高速撞到屏幕左右边缘时，偶尔扒住边缘几秒");
+        perchEnabled.setChecked(settingPrefs.getBoolean("perch_enabled", true));
+        root.addView(perchEnabled);
+
+        CheckBox autoDrop = new CheckBox(this);
+        autoDrop.setText("启动/召回时从屏幕上方掉下来");
+        autoDrop.setChecked(settingPrefs.getBoolean("auto_drop", true));
+        root.addView(autoDrop);
+
+        CheckBox autoSleep = new CheckBox(this);
+        autoSleep.setText("长时间没互动后自动睡觉");
+        autoSleep.setChecked(settingPrefs.getBoolean("auto_sleep", true));
+        root.addView(autoSleep);
+
+        LinearLayout sleepRow = new LinearLayout(this);
+        sleepRow.setGravity(Gravity.CENTER_VERTICAL);
+        sleepRow.addView(label("多久后睡觉：", 16));
+        Spinner sleepSpinner = new Spinner(this);
+        String[] sleepLabels = new String[]{"1 分钟", "2 分钟", "5 分钟"};
+        int[] sleepValues = new int[]{60, 120, 300};
